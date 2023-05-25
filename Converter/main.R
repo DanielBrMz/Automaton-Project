@@ -1,4 +1,4 @@
-# install.packages(c("shiny", "igraph"))
+install.packages(c("shiny", "igraph"))
 library(shiny)
 library(igraph)
 
@@ -27,21 +27,27 @@ server <- function(input, output) {
     
     # Add states and transitions based on rules
     for (rule in rules) {
-      antecedent <- rule[1]
-      consequent <- substr(rule[2], 2, 2)  # Extract the state from the consequent
-      transition <- substr(rule[2], 1, 1)  # Extract the transition symbol from the consequent
-      
-      # Add states if they don't exist yet
-      if (!antecedent %in% V(g)$name) {
-        g <- add.vertices(g, nv = 1, name = antecedent)
+      # Check if the rule is not empty
+      if (length(rule) > 1) {
+        antecedent <- rule[1]
+        consequent <- substr(rule[2], 2, 2)  # Extract the state from the consequent
+        transition <- substr(rule[2], 1, 1)  # Extract the transition symbol from the consequent
+        
+        # Check if the rule is valid
+        if (nchar(transition) > 0 && nchar(consequent) > 0) {
+          # Add states if they don't exist yet
+          if (!antecedent %in% V(g)$name) {
+            g <- add.vertices(g, nv = 1, name = antecedent)
+          }
+          if (!consequent %in% V(g)$name) {
+            g <- add.vertices(g, nv = 1, name = consequent)
+          }
+          
+          # Add transition
+          g <- add.edges(g, c(antecedent, consequent))
+          E(g, path=c(antecedent, consequent))$name <- transition
+        }
       }
-      if (!consequent %in% V(g)$name) {
-        g <- add.vertices(g, nv = 1, name = consequent)
-      }
-      
-      # Add transition
-      g <- add.edges(g, c(antecedent, consequent))
-      E(g, path=c(antecedent, consequent))$name <- transition
     }
     
     # If there is a state with no outgoing edges, rename it to 'Z'
