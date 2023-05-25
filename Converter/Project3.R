@@ -1,3 +1,8 @@
+# install.packages(c("shiny", "igraph")) install if needed
+library("shiny")
+library("igraph")
+
+
 ui <- fluidPage(
   titlePanel("Regular Grammar to Finite Automaton Converter"),
   sidebarLayout(
