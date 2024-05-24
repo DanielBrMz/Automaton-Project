@@ -1,4 +1,4 @@
-install.packages(c("shiny", "igraph"))
+# install.packages(c("shiny", "igraph"))
 library(shiny)
 library(igraph)
 
@@ -15,8 +15,6 @@ ui <- fluidPage(
   )
 )
 
-
-
 server <- function(input, output) {
   # Reactive expression to process grammar input and create automaton
   reactiveAutomaton <- reactive({
@@ -30,7 +28,8 @@ server <- function(input, output) {
     # Add states and transitions based on rules
     for (rule in rules) {
       antecedent <- rule[1]
-      consequent <- rule[2]
+      consequent <- substr(rule[2], 2, 2)  # Extract the state from the consequent
+      transition <- substr(rule[2], 1, 1)  # Extract the transition symbol from the consequent
       
       # Add states if they don't exist yet
       if (!antecedent %in% V(g)$name) {
@@ -42,6 +41,12 @@ server <- function(input, output) {
       
       # Add transition
       g <- add.edges(g, c(antecedent, consequent))
+      E(g, path=c(antecedent, consequent))$name <- transition
+    }
+    
+    # If there is a state with no outgoing edges, rename it to 'Z'
+    if (length(which(degree(g, mode="out") == 0)) > 0) {
+      V(g)[which(degree(g, mode="out") == 0)]$name <- "Z"
     }
     
     # Return the graph
@@ -51,7 +56,12 @@ server <- function(input, output) {
   # Render the automaton plot
   output$automatonPlot <- renderPlot({
     g <- reactiveAutomaton()
-    plot(g, vertex.color = ifelse(V(g)$name == "S", "green", ifelse(V(g)$name == "Z", "red", "white")))
+    
+    if (nchar(input$grammar) > 0) {
+      E(g)$label <- E(g)$name  # Label the edges with the transition symbols
+    }
+    
+    plot(g, vertex.color = ifelse(V(g)$name == "S", "green", ifelse(V(g)$name == "Z", "red", "white")), edge.label=E(g)$label)
   })
 }
 
